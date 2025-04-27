@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbon Footprint Calculator - Government Polytechnic Himatnagar</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.8/dist/countUp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #1C2833;
+            --container-bg: linear-gradient(135deg, #2E4053, #34495E);
+            --text-color: white;
+            --highlight: #F4D03F;
+            --button-bg: #E67E22;
+            --button-hover: #D35400;
+            --light-bg: #ecf0f1;
+            --light-text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .light {
+            background-color: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        .header {
+            background: #2E4053;
+            padding: 15px;
+            color: white;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 700px;
+            margin: auto;
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2);
+            margin-top: 20px;
+        }
+
+        h2 {
+            color: var(--highlight);
+        }
+
+        label, select {
+            display: block;
+            margin: 10px 0 5px;
+            text-align: left;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: var(--button-bg);
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px 5px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: var(--button-hover);
+        }
+
+        #results {
+            margin-top: 20px;
+            background: #16A085;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        canvas {
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        #downloadBtn, #themeToggle {
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>GOVERNMENT POLYTECHNIC HIMMATNAGAR</h1>
+        <h3>Department: Electrical Engineering</h3>
+        <h3>Subject: Energy Conservation & Audit (4360903)</h3> 
+        <h3>Students: Patel Divy P., Patel Ravi D.</h3>
+    </div>
+
+    <div class="container" id="capture">
+        <h2>🌍 Carbon Footprint Calculator</h2>
+
+        <select id="country">
+            <option value="0.92">India</option>
+            <option value="0.45">USA</option>
+            <option value="0.38">Germany</option>
+            <option value="0.60">China</option>
+        </select>
+
+        <label>Daily Electricity Usage (Units):</label>
+        <input type="number" id="electricity" placeholder="Units">
+
+        <label>Daily Fuel Usage (Liters):</label>
+        <input type="number" id="fuel" placeholder="Liters">
+
+        <label>Daily LPG Usage (kg):</label>
+        <input type="number" id="lpg" placeholder="kg">
+
+        <label>Daily Water Consumption (Liters):</label>
+        <input type="number" id="water" placeholder="Liters">
+
+        <label>Daily Public Transport Distance (km):</label>
+        <input type="number" id="distance" placeholder="km">
+
+        <label>Flights Taken Per Year (hours):</label>
+        <input type="number" id="flights" placeholder="hours">
+
+        <label>Trees Planted Per Year:</label>
+        <input type="number" id="trees" placeholder="trees">
+
+        <button onclick="calculateCarbon()">Calculate CO₂ Emissions</button>
+        <button id="themeToggle" onclick="toggleTheme()">Toggle Light/Dark</button>
+        <button id="downloadBtn" onclick="downloadPDF()">Download Report</button>
+
+        <div id="results"></div>
+
+        <canvas id="yearlyChart"></canvas>
+    </div>
+
+<script>
+let yearlyChart;
+
+function calculateCarbon() {
+    let electricity = Number(document.getElementById("electricity").value) || 0;
+    let fuel = Number(document.getElementById("fuel").value) || 0;
+    let lpg = Number(document.getElementById("lpg").value) || 0;
+    let water = Number(document.getElementById("water").value) || 0;
+    let distance = Number(document.getElementById("distance").value) || 0;
+    let flights = Number(document.getElementById("flights").value) || 0;
+    let trees = Number(document.getElementById("trees").value) || 0;
+    let countryFactor = Number(document.getElementById("country").value);
+
+    const emissionFactors = {
+        electricity: countryFactor,
+        fuel: 2.5,
+        lpg: 2.98,
+        water: 0.001,
+        distance: 0.15,
+        flights: 90
+    };
+
+    let electricityCO2 = electricity * emissionFactors.electricity;
+    let fuelCO2 = fuel * emissionFactors.fuel;
+    let lpgCO2 = lpg * emissionFactors.lpg;
+    let waterCO2 = water * emissionFactors.water;
+    let distanceCO2 = distance * emissionFactors.distance;
+    let flightsCO2 = (flights * emissionFactors.flights) / 365;
+
+    let dailyCO2 = electricityCO2 + fuelCO2 + lpgCO2 + waterCO2 + distanceCO2 + flightsCO2;
+    let yearlyCO2 = dailyCO2 * 365;
+
+    let treeOffset = yearlyCO2 / 21; // One tree absorbs ~21kg CO2 per year
+
+    let suggestion = "";
+
+    if (dailyCO2 <= 10) {
+        suggestion = "🌟 Amazing! Your carbon footprint is extremely low. Keep inspiring others! 🌿";
+    } else if (dailyCO2 <= 20) {
+        suggestion = "💚 Good job! You are living an eco-friendly lifestyle. Small tweaks can make it even better!";
+    } else if (dailyCO2 <= 30) {
+        suggestion = "😊 Nice effort! Try switching to more public transport and energy-saving devices.";
+    } else if (dailyCO2 <= 50) {
+        suggestion = "🚲 Moderate emissions detected. Consider cycling, carpooling, and reducing flights.";
+    } else if (dailyCO2 <= 70) {
+        suggestion = "⚡ High CO₂ emissions! Think about installing solar panels and using electric vehicles.";
+    } else {
+        suggestion = "🔥 Very High CO₂ footprint! Immediate action recommended: renewable energy, efficient appliances, planting more trees.";
+    }
+
+    document.getElementById("results").style.display = "block";
+
+    document.getElementById("results").innerHTML = ` 
+        <h3>Total CO₂ Emission: <span style="color: #F1C40F;">${dailyCO2.toFixed(2)} kg/day</span></h3>
+        <h3>Yearly CO₂ Emission: <span style="color: #F1C40F;">${yearlyCO2.toFixed(2)} kg</span></h3>
+        <h3>Trees Needed to Offset: <span style="color: #2ECC71;">${treeOffset.toFixed(1)}</span> trees/year</h3>
+        <h4>${suggestion}</h4>
+        <h4>🌐 Compared to World Avg (4500 kg/year): <span style="color: #3498DB;">${(yearlyCO2 / 4500 * 100).toFixed(1)}%</span></h4>
+    `;
+
+    drawChart(electricityCO2, fuelCO2, lpgCO2, waterCO2, distanceCO2, flightsCO2);
+}
+
+function drawChart(...values) {
+    const ctx = document.getElementById("yearlyChart").getContext("2d");
+
+    if (yearlyChart) yearlyChart.destroy();
+
+    yearlyChart = new Chart(ctx, {
+        type: "pie",
+        data: {
+            labels: ["Electricity", "Fuel", "LPG", "Water", "Public Transport", "Flights"],
+            datasets: [{
+                data: values.map(v => v * 365),
+                backgroundColor: ["#3498DB", "#E74C3C", "#F1C40F", "#2ECC71", "#9B59B6", "#E67E22"]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function toggleTheme() {
+    document.body.classList.toggle("light");
+}
+
+function downloadPDF() {
+    const element = document.getElementById("capture");
+    const opt = {
+        margin: 0.5,
+        filename: 'carbon_footprint_report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().from(element).set(opt).save();
+}
+</script>
+
+
+</body>
+</html>
